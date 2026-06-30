@@ -1,0 +1,562 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DPDP Act Agent System - Architecture</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            padding: 40px;
+            color: #fff;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+            background: linear-gradient(90deg, #00d9ff, #00ff88);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #8892b0;
+            margin-bottom: 40px;
+            font-size: 1.2em;
+        }
+        
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        
+        .section {
+            margin-bottom: 50px;
+        }
+        
+        .section-title {
+            font-size: 1.5em;
+            color: #00d9ff;
+            margin-bottom: 20px;
+            padding-left: 10px;
+            border-left: 4px solid #00d9ff;
+        }
+        
+        .agent-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 25px;
+        }
+        
+        .agent-card {
+            background: rgba(255, 255, 255, 0.05);
+            border-radius: 15px;
+            padding: 25px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .agent-card:hover {
+            transform: translateY(-5px);
+            border-color: #00d9ff;
+            box-shadow: 0 10px 40px rgba(0, 217, 255, 0.2);
+        }
+        
+        .agent-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+            background: linear-gradient(90deg, var(--agent-color), transparent);
+        }
+        
+        .agent-card.orchestrator {
+            --agent-color: #ff6b6b;
+            grid-column: 1 / -1;
+            background: rgba(255, 107, 107, 0.1);
+        }
+        
+        .agent-card.data-intelligence { --agent-color: #4ecdc4; }
+        .agent-card.subject-rights { --agent-color: #ffe66d; }
+        .agent-card.incident-response { --agent-color: #ff6b6b; }
+        .agent-card.risk-assessment { --agent-color: #a855f7; }
+        .agent-card.compliance-monitoring { --agent-color: #00d9ff; }
+        
+        .agent-icon {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+        }
+        
+        .agent-name {
+            font-size: 1.4em;
+            font-weight: bold;
+            color: var(--agent-color);
+            margin-bottom: 10px;
+        }
+        
+        .agent-role {
+            font-size: 0.95em;
+            color: #8892b0;
+            margin-bottom: 15px;
+        }
+        
+        .agent-details {
+            font-size: 0.9em;
+            line-height: 1.6;
+        }
+        
+        .agent-details ul {
+            list-style: none;
+            padding-left: 0;
+        }
+        
+        .agent-details li {
+            padding: 5px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        }
+        
+        .agent-details li:last-child {
+            border-bottom: none;
+        }
+        
+        .trigger {
+            display: inline-block;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 3px 10px;
+            border-radius: 15px;
+            font-size: 0.8em;
+            margin: 2px;
+        }
+        
+        .efficiency {
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 255, 136, 0.1);
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .efficiency-value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #00ff88;
+        }
+        
+        .efficiency-label {
+            font-size: 0.8em;
+            color: #8892b0;
+        }
+        
+        /* Flow Diagram */
+        .flow-diagram {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 15px;
+            padding: 40px;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .flow-row {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin: 30px 0;
+        }
+        
+        .flow-node {
+            background: rgba(255, 255, 255, 0.1);
+            border: 2px solid var(--node-color, #00d9ff);
+            border-radius: 12px;
+            padding: 15px 25px;
+            text-align: center;
+            min-width: 150px;
+            position: relative;
+        }
+        
+        .flow-node.user { --node-color: #00ff88; }
+        .flow-node.orchestrator { --node-color: #ff6b6b; }
+        .flow-node.agent { --node-color: #4ecdc4; }
+        .flow-node.external { --node-color: #ffe66d; }
+        
+        .flow-node-title {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .flow-node-desc {
+            font-size: 0.8em;
+            color: #8892b0;
+        }
+        
+        .flow-arrow {
+            font-size: 2em;
+            color: #00d9ff;
+        }
+        
+        /* Phase Timeline */
+        .phase-timeline {
+            display: flex;
+            justify-content: space-between;
+            margin: 30px 0;
+            position: relative;
+        }
+        
+        .phase-timeline::before {
+            content: '';
+            position: absolute;
+            top: 40px;
+            left: 0;
+            right: 0;
+            height: 4px;
+            background: linear-gradient(90deg, #4ecdc4, #ffe66d, #ff6b6b, #00d9ff);
+            border-radius: 2px;
+        }
+        
+        .phase-item {
+            text-align: center;
+            flex: 1;
+            position: relative;
+            z-index: 1;
+        }
+        
+        .phase-dot {
+            width: 20px;
+            height: 20px;
+            background: var(--phase-color);
+            border-radius: 50%;
+            margin: 30px auto 15px;
+            border: 3px solid #1a1a2e;
+        }
+        
+        .phase-item:nth-child(1) { --phase-color: #4ecdc4; }
+        .phase-item:nth-child(2) { --phase-color: #ffe66d; }
+        .phase-item:nth-child(3) { --phase-color: #ff6b6b; }
+        .phase-item:nth-child(4) { --phase-color: #00d9ff; }
+        
+        .phase-name {
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .phase-time {
+            font-size: 0.85em;
+            color: #8892b0;
+        }
+        
+        /* Legal Framework */
+        .legal-framework {
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 15px;
+            padding: 30px;
+        }
+        
+        .principle-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+        
+        .principle-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 15px;
+            border-radius: 10px;
+            border-left: 3px solid #00d9ff;
+        }
+        
+        .principle-name {
+            font-weight: bold;
+            color: #00d9ff;
+            margin-bottom: 5px;
+        }
+        
+        .principle-desc {
+            font-size: 0.85em;
+            color: #8892b0;
+        }
+        
+        /* Footer */
+        .footer {
+            text-align: center;
+            margin-top: 50px;
+            padding-top: 30px;
+            border-top: 1px solid rgba(255, 255, 255, 0.1);
+            color: #8892b0;
+        }
+        
+        .footer-tech {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 15px;
+        }
+        
+        .tech-badge {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 8px 20px;
+            border-radius: 20px;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>DPDP Act Agent System</h1>
+        <p class="subtitle">Multi-Agent AI Architecture for India's Digital Personal Data Protection Compliance</p>
+        
+        <!-- Architecture Overview -->
+        <div class="section">
+            <h2 class="section-title">Multi-Agent Architecture</h2>
+            
+            <!-- Flow Diagram -->
+            <div class="flow-diagram">
+                <div class="flow-row">
+                    <div class="flow-node user">
+                        <div class="flow-node-title">User / System</div>
+                        <div class="flow-node-desc">DPDP Compliance Task</div>
+                    </div>
+                    <div class="flow-arrow">→</div>
+                    <div class="flow-node orchestrator">
+                        <div class="flow-node-title">Orchestrator</div>
+                        <div class="flow-node-desc">Route & Coordinate</div>
+                    </div>
+                </div>
+                <div class="flow-row">
+                    <div class="flow-arrow" style="transform: rotate(90deg);">↓</div>
+                </div>
+                <div class="flow-row">
+                    <div class="flow-node agent">
+                        <div class="flow-node-title">Data Intelligence</div>
+                        <div class="flow-node-desc">Data Mapping</div>
+                    </div>
+                    <div class="flow-node agent">
+                        <div class="flow-node-title">Subject Rights</div>
+                        <div class="flow-node-desc">DSR Handling</div>
+                    </div>
+                    <div class="flow-node agent">
+                        <div class="flow-node-title">Incident Response</div>
+                        <div class="flow-node-desc">Breach Response</div>
+                    </div>
+                    <div class="flow-node agent">
+                        <div class="flow-node-title">Risk Assessment</div>
+                        <div class="flow-node-desc">DPIA</div>
+                    </div>
+                    <div class="flow-node agent">
+                        <div class="flow-node-title">Compliance Monitor</div>
+                        <div class="flow-node-desc">Regulatory Updates</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Agent Cards -->
+            <div class="agent-grid">
+                <div class="agent-card orchestrator">
+                    <div class="agent-icon">🎯</div>
+                    <div class="agent-name">DPDP Orchestrator Agent</div>
+                    <div class="agent-role">Central Coordinator</div>
+                    <div class="agent-details">
+                        <ul>
+                            <li><strong>Role:</strong> Routes requests to specialized agents</li>
+                            <li><strong>Skills:</strong> DPDP Orchestration, Agent Coordination</li>
+                            <li><strong>Tools:</strong> TaskToolSet, Terminal, FileEditor</li>
+                            <li><strong>Pattern:</strong> Multi-agent delegation</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div class="agent-card data-intelligence">
+                    <div class="agent-icon">🔍</div>
+                    <div class="agent-name">Data Intelligence Agent</div>
+                    <div class="agent-role">Data Mapping & Discovery</div>
+                    <div class="agent-details">
+                        <ul>
+                            <li><strong>Triggers:</strong> 
+                                <span class="trigger">data_map</span>
+                                <span class="trigger">inventory</span>
+                                <span class="trigger">infrastructure</span>
+                            </li>
+                            <li><strong>Capabilities:</strong> Auto-discovery, API integration, classification</li>
+                        </ul>
+                    </div>
+                    <div class="efficiency">
+                        <div class="efficiency-value">95%</div>
+                        <div class="efficiency-label">Time Reduction</div>
+                    </div>
+                </div>
+                
+                <div class="agent-card subject-rights">
+                    <div class="agent-icon">📋</div>
+                    <div class="agent-name">Subject Rights Agent</div>
+                    <div class="agent-role">Data Subject Request Handling</div>
+                    <div class="agent-details">
+                        <ul>
+                            <li><strong>Triggers:</strong> 
+                                <span class="trigger">dsr</span>
+                                <span class="trigger">erasure</span>
+                                <span class="trigger">consent</span>
+                            </li>
+                            <li><strong>Capabilities:</strong> DSR lifecycle, retrieval, correction</li>
+                        </ul>
+                    </div>
+                    <div class="efficiency">
+                        <div class="efficiency-value">500+</div>
+                        <div class="efficiency-label">DSRs Annually</div>
+                    </div>
+                </div>
+                
+                <div class="agent-card incident-response">
+                    <div class="agent-icon">🚨</div>
+                    <div class="agent-name">Incident Response Agent</div>
+                    <div class="agent-role">Breach Notification & Response</div>
+                    <div class="agent-details">
+                        <ul>
+                            <li><strong>Triggers:</strong> 
+                                <span class="trigger">breach</span>
+                                <span class="trigger">incident</span>
+                                <span class="trigger">notification</span>
+                            </li>
+                            <li><strong>Deadlines:</strong> DPB: 72hrs, CERT-In: 6hrs</li>
+                        </ul>
+                    </div>
+                    <div class="efficiency">
+                        <div class="efficiency-value">45min</div>
+                        <div class="efficiency-label">Response Time</div>
+                    </div>
+                </div>
+                
+                <div class="agent-card risk-assessment">
+                    <div class="agent-icon">⚖️</div>
+                    <div class="agent-name">Risk Assessment Agent</div>
+                    <div class="agent-role">DPIA & Risk Analysis</div>
+                    <div class="agent-details">
+                        <ul>
+                            <li><strong>Triggers:</strong> 
+                                <span class="trigger">dpia</span>
+                                <span class="trigger">risk</span>
+                                <span class="trigger">audit</span>
+                            </li>
+                            <li><strong>Capabilities:</strong> Automated DPIA, SDF compliance</li>
+                        </ul>
+                    </div>
+                    <div class="efficiency">
+                        <div class="efficiency-value">87.5%</div>
+                        <div class="efficiency-label">Time Reduction</div>
+                    </div>
+                </div>
+                
+                <div class="agent-card compliance-monitoring">
+                    <div class="agent-icon">📡</div>
+                    <div class="agent-name">Compliance Monitoring Agent</div>
+                    <div class="agent-role">Regulatory Surveillance</div>
+                    <div class="agent-details">
+                        <ul>
+                            <li><strong>Triggers:</strong> 
+                                <span class="trigger">compliance</span>
+                                <span class="trigger">monitor</span>
+                                <span class="trigger">regulation</span>
+                            </li>
+                            <li><strong>Capabilities:</strong> 24/7 surveillance, rule tracking</li>
+                        </ul>
+                    </div>
+                    <div class="efficiency">
+                        <div class="efficiency-value">96.9%</div>
+                        <div class="efficiency-label">Time Reduction</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Phased Deployment -->
+        <div class="section">
+            <h2 class="section-title">Phased Deployment Plan</h2>
+            <div class="phase-timeline">
+                <div class="phase-item">
+                    <div class="phase-dot"></div>
+                    <div class="phase-name">Phase 1: Foundation</div>
+                    <div class="phase-time">Month 1-4</div>
+                </div>
+                <div class="phase-item">
+                    <div class="phase-dot"></div>
+                    <div class="phase-name">Phase 2: Consent</div>
+                    <div class="phase-time">Month 5-8</div>
+                </div>
+                <div class="phase-item">
+                    <div class="phase-dot"></div>
+                    <div class="phase-name">Phase 3: Integration</div>
+                    <div class="phase-time">Month 9-12</div>
+                </div>
+                <div class="phase-item">
+                    <div class="phase-dot"></div>
+                    <div class="phase-name">Phase 4: Sustaining</div>
+                    <div class="phase-time">Month 17+</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Legal Framework -->
+        <div class="section">
+            <h2 class="section-title">DPDP Act Core Principles</h2>
+            <div class="legal-framework">
+                <div class="principle-grid">
+                    <div class="principle-item">
+                        <div class="principle-name">Purpose Discipline</div>
+                        <div class="principle-desc">Personal data used exclusively for clear, legitimate purposes</div>
+                    </div>
+                    <div class="principle-item">
+                        <div class="principle-name">Data Minimization</div>
+                        <div class="principle-desc">Only collect data strictly required for stated purpose</div>
+                    </div>
+                    <div class="principle-item">
+                        <div class="principle-name">Retention Limitation</div>
+                        <div class="principle-desc">Automated erasure once purpose is fulfilled</div>
+                    </div>
+                    <div class="principle-item">
+                        <div class="principle-name">Accuracy</div>
+                        <div class="principle-desc">Ensure accuracy in data-driven decisions</div>
+                    </div>
+                    <div class="principle-item">
+                        <div class="principle-name">Security Safeguards</div>
+                        <div class="principle-desc">Reasonable protection against unauthorized access</div>
+                    </div>
+                    <div class="principle-item">
+                        <div class="principle-name">Transparency</div>
+                        <div class="principle-desc">Clear and transparent processing operations</div>
+                    </div>
+                    <div class="principle-item">
+                        <div class="principle-name">Accountability</div>
+                        <div class="principle-desc">Demonstrable audit trails for all actions</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Footer -->
+        <div class="footer">
+            <p>Built with OpenHands Software Agent SDK</p>
+            <div class="footer-tech">
+                <span class="tech-badge">Python</span>
+                <span class="tech-badge">OpenHands SDK</span>
+                <span class="tech-badge">Multi-Agent</span>
+                <span class="tech-badge">DPDP Act 2023</span>
+            </div>
+        </div>
+    </div>
+</body>
+</html>
